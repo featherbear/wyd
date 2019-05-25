@@ -48,6 +48,11 @@ export default {
     // See https://github.com/nuxt-community/axios-module#options
   },
 
+
+  router: {
+    base: '/wyd/'
+  },
+
   /*
    ** Build configuration
    */
@@ -72,6 +77,4 @@ export default {
       }
     }
   },
-
-  buildDir: 'docs'
 }
