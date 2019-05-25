@@ -56,14 +56,19 @@ export default {
      ** You can extend webpack config here
      */
     extend(config, ctx) {
-      // Run ESLint on save
-      if (/* NOPE, NO YOU DON'T */ false && ctx.isDev && ctx.isClient) {
-        config.module.rules.push({
-          enforce: 'pre',
-          test: /\.(js|vue)$/,
-          loader: 'eslint-loader',
-          exclude: /(node_modules)/
-        })
+      if (ctx.isDev) {
+        if (!ctx.isDev) {
+          config.output.publicPath = './_nuxt/'
+        }
+        if (ctx.isClient) {
+          // // Run ESLint on save
+          //   config.module.rules.push({
+          //     enforce: 'pre',
+          //     test: /\.(js|vue)$/,
+          //     loader: 'eslint-loader',
+          //     exclude: /(node_modules)/
+          //   })
+        }
       }
     }
   },
