@@ -2,22 +2,22 @@
   <div class="column">
     <div class="card">
       <header class="card-header">
-        <p class="card-header-title has-text-grey">
-          {{ title }}
-        </p>
+        <p class="card-header-title has-text-grey">{{ title }}</p>
       </header>
       <div class="card-content">
         <div class="content has-text-centered">
-          <b-icon :icon="icon" size="is-large" type="is-primary" />
+          <slot/>
+
+          <!-- <b-icon :icon="icon" size="is-large" type="is-primary"/> -->
         </div>
       </div>
-      <footer class="card-footer">
+      <!-- <footer class="card-footer">
         <div class="card-footer-item">
           <span>
-            <slot />
+
           </span>
         </div>
-      </footer>
+      </footer>-->
     </div>
   </div>
 </template>
@@ -28,11 +28,11 @@ export default {
     title: {
       type: String,
       required: true
-    },
-    icon: {
-      type: String,
-      required: true
     }
+    //  content: {
+    //    type: String,
+    //    required: true
+    //  }
   }
 }
 </script>

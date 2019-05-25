@@ -29,7 +29,7 @@ export default {
   /*
    ** Plugins to load before mounting the App
    */
-  plugins: [],
+  plugins: [{ src: '~/plugins/fetchGCal.js', ssr: false }],
 
   /*
    ** Nuxt.js modules
@@ -57,7 +57,7 @@ export default {
      */
     extend(config, ctx) {
       // Run ESLint on save
-      if (ctx.isDev && ctx.isClient) {
+      if (/* NOPE, NO YOU DON'T */ false && ctx.isDev && ctx.isClient) {
         config.module.rules.push({
           enforce: 'pre',
           test: /\.(js|vue)$/,
@@ -66,5 +66,7 @@ export default {
         })
       }
     }
-  }
+  },
+
+  buildDir: 'docs'
 }
