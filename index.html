@@ -10,7 +10,7 @@
   <body>
     <div id="header">Wyd?</div>
     <div id="container">
-      <div id="rn"></div>
+      <div id="rn">...</div>
       <div id="vue">
         <vue-cal
           class="vuecal--blue-theme"
@@ -108,7 +108,7 @@
       font: 12px sans-serif;
       margin: 0;
     }
-    
+
     /*
     html,
     body {
@@ -132,6 +132,22 @@
       max-height: 150px;
     }
 
+    #rn {
+      margin-top: 25px;
+      padding: 5px 10px;
+      border: 2px solid #b2e4eb;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    #rn:before {
+      content: "Right now: ";
+    }
+
+    #rn:empty:after {
+      content: "Nothing!";
+    }
+
     a {
       position: fixed;
       top: 5px;
@@ -148,24 +164,21 @@
     }
 
     .vuecal__event {
-        cursor: pointer;
-        background-color: #d2f2f7;
-        transition: background-color 0.5s;
+      cursor: pointer;
+      background-color: #d2f2f7;
+      transition: background-color 0.5s;
     }
 
-    .vuecal__event:hover{
-        background-color: #b2e4eb;
-
+    .vuecal__event:hover {
+      background-color: #b2e4eb;
     }
 
     .vuecal__event-title {
-        font-size: 13px;
-        
+      font-size: 13px;
     }
 
     .vuecal__event-time {
     }
-
   </style>
   <script>
     // TODO: Do it properly: https://developers.google.com/calendar/v3/reference/
@@ -196,6 +209,7 @@
       return event;
     }
 
+    let rawData = [];
     let calData = [];
     let v = new Vue({
       components: {
@@ -220,8 +234,8 @@
         let parsed = ICAL.parse(data);
         let events = parsed[2];
 
-        let result = [];
-        events.forEach(e => result.push(flattenEvent(e)));
+        events.forEach(e => rawData.push(flattenEvent(e)));
+        updateCurrent();
 
         const getDay = dayCount =>
           luxon.DateTime.local()
@@ -230,13 +244,7 @@
               days: dayCount
             });
 
-        let offset = 0;
-        let dateToday = getDay(offset + 0);
-        let dateTomorrow = getDay(offset + 1);
-
-        let interval = luxon.Interval.fromDateTimes(dateToday, dateTomorrow);
-
-        for (let event of result) {
+        for (let event of rawData) {
           if (event.dtstart) {
             calData.push({
               allDay: event.isWholeDay,
@@ -253,5 +261,29 @@
       .finally(() => {
         document.getElementById("loader").classList.remove("active");
       });
+
+    const updateCurrent = () => {
+      let rnElem = document.getElementById("rn");
+
+      rnElem.innerHTML = "";
+
+      if (rawData.length) {
+        /*
+          // For day match 
+          let offset = 0;
+          let dateToday = getDay(offset + 0);
+          let dateTomorrow = getDay(offset + 1);
+          let interval = luxon.Interval.fromDateTimes(dateToday, dateTomorrow);
+        */
+        let currentEvents = rawData.filter(
+          evt => evt.interval && evt.interval.contains(new Date())
+        );
+
+        if (currentEvents.length > 0) {
+          rnElem.innerText = currentEvents[0].summary;
+        }
+      }
+    };
+    setInterval(updateCurrent, 60 * 1000);
   </script>
 </html>
