@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <script src="https://unpkg.com/ical.js"></script>
+    <script src="https://unpkg.com/luxon"></script>
+    <script src="https://unpkg.com/vue-cal"></script>
+    <link href="https://unpkg.com/vue-cal/dist/vuecal.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="header">Wyd?</div>
+    <div id="container">
+      <div id="rn"></div>
+      <div id="vue">
+        <vue-cal
+          class="vuecal--blue-theme"
+          :events="calendarData"
+          small
+          show-all-day-events
+          :disable-views="['years', 'year', 'month']"
+          start-week-on-sunday
+        ></vue-cal>
+      </div>
+    </div>
+
+    <div id="loader" class="active">
+      <div class="loader">
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+  </body>
+  <style>
+    #loader {
+      position: fixed;
+      left: 0;
+      width: 100%;
+      top: 0;
+      height: 100%;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      z-index: 100;
+
+      background-color: rgba(0, 0, 0, 0.5);
+      transition: opacity 0.3s;
+    }
+
+    #loader:not(.active) {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loader.active {
+      opacity: 1;
+    }
+
+    /* https://github.com/ConnorAtherton/loaders.css */
+
+    @keyframes loader-rotate {
+      0% {
+        -webkit-transform: rotate(0deg) scale(1);
+        transform: rotate(0deg) scale(1);
+      }
+      50% {
+        -webkit-transform: rotate(180deg) scale(0.6);
+        transform: rotate(180deg) scale(0.6);
+      }
+      100% {
+        -webkit-transform: rotate(360deg) scale(1);
+        transform: rotate(360deg) scale(1);
+      }
+    }
+
+    .loader {
+      position: relative;
+    }
+    .loader > div {
+      -webkit-animation-fill-mode: both;
+      animation-fill-mode: both;
+      position: absolute;
+      left: -20px;
+      top: -20px;
+      border: 2px solid #fff;
+      border-bottom-color: transparent;
+      border-top-color: transparent;
+      border-radius: 100%;
+      height: 35px;
+      width: 35px;
+      -webkit-animation: loader-rotate 1s 0s ease-in-out infinite;
+      animation: loader-rotate 1s 0s ease-in-out infinite;
+    }
+    .loader > div:last-child {
+      display: inline-block;
+      top: -10px;
+      left: -10px;
+      width: 15px;
+      height: 15px;
+      -webkit-animation-duration: 0.5s;
+      animation-duration: 0.5s;
+      border-color: #fff transparent #fff transparent;
+      -webkit-animation-direction: reverse;
+      animation-direction: reverse;
+    }
+
+    * {
+      font: 12px sans-serif;
+      margin: 0;
+    }
+    
+    /*
+    html,
+    body {
+        height: 100vh;
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+    */
+
+    #container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    #vue {
+      margin: 30px auto;
+      max-height: 150px;
+    }
+
+    a {
+      position: fixed;
+      top: 5px;
+      right: 5px;
+      color: #333;
+    }
+
+    #header {
+      font-size: 20px;
+      background-color: #b2e4eb;
+      text-align: center;
+      /* color: white; */
+      padding: 5px;
+    }
+
+    .vuecal__event {
+        cursor: pointer;
+        background-color: #d2f2f7;
+        transition: background-color 0.5s;
+    }
+
+    .vuecal__event:hover{
+        background-color: #b2e4eb;
+
+    }
+
+    .vuecal__event-title {
+        font-size: 13px;
+        
+    }
+
+    .vuecal__event-time {
+    }
+
+  </style>
+  <script>
+    // TODO: Do it properly: https://developers.google.com/calendar/v3/reference/
+    function CORS(url) {
+      return "https://cors-anywhere.herokuapp.com/" + `${url}`;
+    }
+
+    // https://www.raymondcamden.com/2017/08/24/serverless-ical-parsing
+    function flattenEvent(e) {
+      let event = {};
+      for (let i = 0; i < e[1].length; i++) {
+        let prop = e[1][i];
+        event[prop[0]] = prop[3];
+      }
+
+      // Set dates to Date objects
+      if (event.dtstart) {
+        event.isWholeDay = event.dtstart && event.dtstart.length == 10;
+        event.dtstart = luxon.DateTime.fromISO(event.dtstart);
+        event.dtend = event.dtend
+          ? luxon.DateTime.fromISO(event.dtend)
+          : event.dtstart;
+        event.interval = luxon.Interval.fromDateTimes(
+          event.dtstart,
+          event.dtend
+        );
+      }
+      return event;
+    }
+
+    let calData = [];
+    let v = new Vue({
+      components: {
+        "vue-cal": vuecal
+      },
+      el: "#vue",
+      data: () => {
+        return {
+          calendarData: calData
+        };
+      }
+    });
+
+    fetch(
+      CORS(
+        "https://calendar.google.com/calendar/ical/zzmetrox%40gmail.com/private-6666a937211db8f9e886851a9e31303f/basic.ics"
+      )
+    )
+      .then(e => e.text())
+      .then(data => {
+        console.info("Got data from Google Calendar");
+        let parsed = ICAL.parse(data);
+        let events = parsed[2];
+
+        let result = [];
+        events.forEach(e => result.push(flattenEvent(e)));
+
+        const getDay = dayCount =>
+          luxon.DateTime.local()
+            .startOf("day")
+            .plus({
+              days: dayCount
+            });
+
+        let offset = 0;
+        let dateToday = getDay(offset + 0);
+        let dateTomorrow = getDay(offset + 1);
+
+        let interval = luxon.Interval.fromDateTimes(dateToday, dateTomorrow);
+
+        for (let event of result) {
+          if (event.dtstart) {
+            calData.push({
+              allDay: event.isWholeDay,
+              start: event.dtstart.toFormat("y-MM-dd H:mm:ss"),
+              end: (event.isWholeDay
+                ? event.dtend.minus(1)
+                : event.dtend
+              ).toFormat("y-MM-dd H:mm:ss"),
+              title: event.summary
+            });
+          }
+        }
+      })
+      .finally(() => {
+        document.getElementById("loader").classList.remove("active");
+      });
+  </script>
+</html>
