@@ -71,8 +71,6 @@ function doTheParse(ics) {
     ...new Set(occurrences.map((o: object) => JSON.stringify(o))),
   ].map((j: string) => JSON.parse(j));
 
-  // return dedupe;
-
   // Double check forward
   let after = dedupe.filter((e) => new Date(e.dtstart) >= forwardTime);
 
@@ -84,6 +82,8 @@ function doTheParse(ics) {
 
 export default new (class {
   #cache: any;
+  #dataPromise: Promise<any>;
+
   #urls: string[];
 
   #isInit: boolean = false;
@@ -97,23 +97,29 @@ export default new (class {
   init(urls) {
     if (this.#isInit) throw new Error("Already initialised");
     this.#urls = urls;
-    this.#cache = this.update();
+    this.#cache = [];
+    for (let i = 0; i < this.#urls.length; i++) {
+      this.#cache.push([]);
+    }
+
+    this.#dataPromise = this.update();
+
     this.#isInit = true;
   }
 
   get data() {
     if (!this.#isInit) throw new Error("Not initialised");
-    return this.#cache;
+    return this.#dataPromise;
   }
 
   private async update() {
-    this.#cache = (
-      await Promise.all(
+    (
+      await Promise.allSettled(
         this.#urls.map(async (url) =>
           doTheParse(await fetch(url).then((r) => r.text()))
         )
       )
-    ).flat();
+    ).forEach((p, i) => p.status === "fulfilled" && (this.#cache[i] = p.value));
 
     setTimeout(
       () => this.update(), // Update
